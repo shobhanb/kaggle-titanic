@@ -63,28 +63,35 @@ for dataset in combine_df:
 # Done with dataset preparation
 
 
+# ML Modelling starts here ->
+# Let's start with just a basic Logistic Regression model
+# Perform hyperparameter tuning using Gridsearch
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import roc_auc_score, accuracy_score
+
+# Define our important feature columns
 feature_columns = ['Title_1', 'Title_2', 'Title_3', 'Title_4', 'Pclass_1', 'Pclass_2', 'isAlone', 'Sex', \
                    'Agebins_0', 'Agebins_1', 'Agebins_2', 'Agebins_3', \
                    'Farebins_0', 'Farebins_1', 'Farebins_2', 'Farebins_3', \
                    'Embarked_S', 'Embarked_C']
 
-# ML Modelling starts here ->
-
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.metrics import roc_auc_score, accuracy_score
-
 X = train_df[feature_columns]
 y = train_df['Survived']
+# Using stratify=y here because Survived is 60/40% approx split, so we want it represented
+# in both train & test datasets correctly
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 logreg_param_grid = {
     'penalty': ['l1', 'l2'],
     'C': np.arange(0.1, 1, 0.2),
     'max_iter': np.arange(10,100,10),
+    # Using liblinear here because sklearn docs say it's better for smaller datasets
     'solver': ['liblinear']
 }
 
+# Using ROC AUC as the scoring mechanism
 logreg_cv = GridSearchCV(LogisticRegression(), param_grid=logreg_param_grid, cv=5, scoring='roc_auc', n_jobs=-1)
 logreg_cv.fit(X_train, y_train)
 
@@ -97,6 +104,7 @@ y_pred_proba = logreg_cv.predict_proba(X_test)[:, 1]
 print('Accuracy Score on Validation: ', accuracy_score(y_test, y_pred))
 print('ROC AUC Score on Validation: ', roc_auc_score(y_test, y_pred_proba))
 
+# Use output of above to setup a new LR on the full train dataset & predict final output
 logreg = LogisticRegression(C=0.9, max_iter=10, penalty='l2', solver='liblinear')
 logreg.fit(X,y)
 
@@ -104,6 +112,7 @@ y_pred_final = logreg.predict(test_df[feature_columns])
 submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
 submission.to_csv('submission 5 - LR.csv', index=False)
 
+# For reference - check feature coefficients
 feature_coeffs = pd.DataFrame(X_train.columns)
 feature_coeffs.columns = ['Features']
 feature_coeffs['Logreg Coeffs'] = pd.Series(logreg.coef_[0])

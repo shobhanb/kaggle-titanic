@@ -69,14 +69,16 @@ feature_columns = ['Title_1', 'Title_2', 'Title_3', 'Title_4', 'Pclass_1', 'Pcla
                    'Embarked_S', 'Embarked_C']
 
 # ML Modelling starts here ->
+# Let's start with a Logistic Regression
+# and perform hyperparameter tuning
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.metrics import roc_curve, plot_roc_curve, roc_auc_score, accuracy_score
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import roc_auc_score, accuracy_score
 
 X = train_df[feature_columns]
 y = train_df['Survived']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 logreg_param_grid = {
     'penalty': ['l1', 'l2'],
@@ -99,13 +101,15 @@ print('ROC AUC Score on Validation: ', roc_auc_score(y_test, y_pred_proba))
 
 y_pred_final = logreg_cv.predict(test_df[feature_columns])
 submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
-submission.to_csv('submission 1 - LR.csv', index=False)
+submission.to_csv('submission 3 - LR.csv', index=False)
 
 # Version 2 LR
+# I thought that re-training the model with the full dataset will give better outcomes in the test result
+# So far, still the same outcome in the public rankings
 
 logreg = LogisticRegression(C=0.7, max_iter=70, penalty='l2', solver='liblinear')
-
 logreg.fit(X,y)
+
 y_pred_final = logreg.predict(test_df[feature_columns])
 submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
-submission.to_csv('submission 2 - LR.csv', index=False)
+submission.to_csv('submission 4 - LR.csv', index=False)

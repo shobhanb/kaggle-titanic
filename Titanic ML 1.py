@@ -69,47 +69,42 @@ feature_columns = ['Title_1', 'Title_2', 'Title_3', 'Title_4', 'Pclass_1', 'Pcla
                    'Embarked_S', 'Embarked_C']
 
 # ML Modelling starts here ->
-# Let's start with a Logistic Regression
-# and perform hyperparameter tuning
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.metrics import roc_auc_score, accuracy_score
 
 X = train_df[feature_columns]
 y = train_df['Survived']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 logreg_param_grid = {
     'penalty': ['l1', 'l2'],
-    'C': [0.01, 0.3, 0.5, 0.7, 1, 5, 10],
-    'max_iter': [30, 50, 70, 100],
+    'C': np.arange(0.1, 1, 0.2),
+    'max_iter': np.arange(10,100,10),
     'solver': ['liblinear']
 }
 
 logreg_cv = GridSearchCV(LogisticRegression(), param_grid=logreg_param_grid, cv=5, scoring='roc_auc', n_jobs=-1)
-
 logreg_cv.fit(X_train, y_train)
+
+print('Parameters tested :', logreg_param_grid)
 print('Best Parameters: ', logreg_cv.best_params_)
-print('Best Estimator: ', logreg_cv.best_estimator_)
 print('Best Score: ', logreg_cv.best_score_)
 
 y_pred = logreg_cv.predict(X_test)
-print('Accuracy Score on Validation: ', accuracy_score(y_test, y_pred))
 y_pred_proba = logreg_cv.predict_proba(X_test)[:, 1]
+print('Accuracy Score on Validation: ', accuracy_score(y_test, y_pred))
 print('ROC AUC Score on Validation: ', roc_auc_score(y_test, y_pred_proba))
 
-y_pred_final = logreg_cv.predict(test_df[feature_columns])
-submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
-submission.to_csv('submission 3 - LR.csv', index=False)
-
-# Version 2 LR
-# I thought that re-training the model with the full dataset will give better outcomes in the test result
-# So far, still the same outcome in the public rankings
-
-logreg = LogisticRegression(C=0.7, max_iter=70, penalty='l2', solver='liblinear')
+logreg = LogisticRegression(C=0.9, max_iter=10, penalty='l2', solver='liblinear')
 logreg.fit(X,y)
 
 y_pred_final = logreg.predict(test_df[feature_columns])
 submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
-submission.to_csv('submission 4 - LR.csv', index=False)
+submission.to_csv('submission 5 - LR.csv', index=False)
+
+feature_coeffs = pd.DataFrame(X_train.columns)
+feature_coeffs.columns = ['Features']
+feature_coeffs['Logreg Coeffs'] = pd.Series(logreg.coef_[0])
+print(feature_coeffs.sort_values(by='Logreg Coeffs'))

@@ -100,3 +100,12 @@ print('ROC AUC Score on Validation: ', roc_auc_score(y_test, y_pred_proba))
 y_pred_final = logreg_cv.predict(test_df[feature_columns])
 submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
 submission.to_csv('submission 1 - LR.csv', index=False)
+
+# Version 2 LR
+
+logreg = LogisticRegression(C=0.7, max_iter=70, penalty='l2', solver='liblinear')
+
+logreg.fit(X,y)
+y_pred_final = logreg.predict(test_df[feature_columns])
+submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
+submission.to_csv('submission 2 - LR.csv', index=False)

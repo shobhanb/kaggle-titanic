@@ -89,7 +89,7 @@ X = train_df[feature_columns]
 y = train_df['Survived']
 # Using stratify=y here because Survived is 60/40% approx split, so we want it represented
 # in both train & test datasets correctly
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y)
 
 
 logreg_param_grid = {
@@ -155,17 +155,26 @@ for name, clf, params in zip(clf_names, classifiers, clf_params):
     scores.loc[name, 'Accuracy'] = accuracy_score(y_test, y_pred)
     scores.loc[name, 'Model'] = clf_cv.best_estimator_
 
+    y_pred_final = clf_cv.predict(test_df[feature_columns])
+    submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
+    filename = 'submission 10 - Tuned ' + name + '.csv'
+    submission.to_csv(filename, index=False)
+    print('Created submission file: ', filename)
 
+scores.reset_index(inplace=True)
 scores.sort_values(by='ROC AUC', ascending=False, inplace=True)
 print(scores.iloc[:,:-1])
 
-# Pick DT as the classifier for the job
-
+# Pick best score model as the classifier for the job
+print('Using best model for the job: ', scores.iloc[0,0])
 best_clf = scores.iloc[0,-1]
 y_pred_final = best_clf.predict(test_df[feature_columns])
 
 # Output to file for submission
 submission = pd.DataFrame({'PassengerId': test_PassengerId, 'Survived': y_pred_final})
-submission.to_csv('submission 8 - Tuned DT.csv', index=False)
+
+#filename = 'submission 9 - Tuned ' + scores.iloc[0,0] + '.csv'
+#submission.to_csv(filename, index=False)
+#print('Created submission file: ', filename)
 
 
